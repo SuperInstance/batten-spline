@@ -181,6 +181,31 @@ The only requirements are:
 
 ---
 
+## Comparison with alternatives
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| **batten-spline** | Self-improving, stateful, temporal decay, no training step, works with any embedding | Requires quality feedback loop; O(n) per query (no indexing) |
+| **Fixed threshold** (confidence > 0.7 → local) | Dead simple, zero state | Can't adapt to new prompts; no learning; ignores prompt similarity |
+| **Trained classifier** (MLP on embeddings → route) | Fast inference, learns complex patterns | Needs labeled training data; can't forget stale patterns; no uncertainty |
+| **Embedding cache / exact match** | Instant lookup, zero ambiguity | Only works for previously seen prompts; no generalization |
+| **Bandit algorithms** (UCB, Thompson sampling) | Optimal exploration/exploitation tradeoff | Complex to implement; needs many rounds to converge; harder to debug |
+
+### When batten-spline shines
+
+- You have a **quality feedback signal** (human rating, eval score, downstream metric)
+- Prompts arrive as **embeddings** (from any encoder — sentence-transformers, OpenAI, local model)
+- You want **graceful degradation** (smooth confidence drop in unfamiliar regions rather than hard classifier boundaries)
+- You need **temporal relevance** (recent feedback matters more than old data)
+- You want something **simple and auditable** (no black-box model — just weighted averages)
+
+### When something else is better
+
+- You have massive labeled datasets → train a real classifier
+- You need sub-millisecond latency with thousands of battens → add approximate nearest-neighbor indexing (ANN)
+- You need multi-armed bandit optimality → use a proper bandit framework
+- Embeddings are not available → use rule-based or LLM-based routing
+
 ## License
 
 MIT.  See [LICENSE](LICENSE).
