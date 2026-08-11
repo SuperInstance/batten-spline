@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import time
 from typing import Any
 
@@ -27,11 +28,17 @@ class BattenSpline:
     ) -> None:
         self.battens: list[Batten] = []
         self.fog_scale = float(fog_scale)
-        if self.fog_scale <= 0.0:
-            raise ValueError("fog_scale must be positive")
+        if not math.isfinite(self.fog_scale) or self.fog_scale <= 0.0:
+            raise ValueError("fog_scale must be a positive finite number")
         self.half_life = float(half_life)
+        if not math.isfinite(self.half_life) or self.half_life <= 0.0:
+            raise ValueError("half_life must be a positive finite number")
         self.local_threshold = float(local_threshold)
         self.cascade_threshold = float(cascade_threshold)
+        if not math.isfinite(self.local_threshold):
+            self.local_threshold = 0.7
+        if not math.isfinite(self.cascade_threshold):
+            self.cascade_threshold = 0.3
 
     def add_batten(
         self,
@@ -68,6 +75,10 @@ class BattenSpline:
 
         now = time.time() if now is None else float(now)
         x = np.asarray(new_embedding, dtype=float)
+
+        # Guard: if embedding contains NaN/Inf, return 0.0 (complete fog)
+        if not np.all(np.isfinite(x)):
+            return 0.0
 
         weights: list[float] = []
         scores: list[float] = []
@@ -109,6 +120,10 @@ class BattenSpline:
             if new_embedding is None:
                 raise ValueError("Provide either confidence or new_embedding")
             confidence = self.estimate_confidence(new_embedding)
+
+        # NaN/Inf confidence defaults to CLOUD (safest fallback)
+        if not (isinstance(confidence, (int, float)) and math.isfinite(confidence)):
+            return "CLOUD"
 
         if confidence >= self.local_threshold:
             return "LOCAL"

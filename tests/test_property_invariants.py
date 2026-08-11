@@ -269,17 +269,9 @@ class TestNumericalStability:
             assert 0.0 <= result <= 1.0
 
     def test_inf_fog_scale_rejected(self):
-        """Infinite fog scale should be rejected by the validator."""
-        # The current validator only checks <= 0, so inf passes.
-        # This test documents the gap — if the code is fixed to reject inf,
-        # this test will need updating.
-        import math
-        spline = BattenSpline(fog_scale=float('inf'))
-        # With inf fog_scale, all distances become zero in the kernel
-        # This is degenerate but not crashing
-        spline.add_batten(np.array([0, 0]), quality=0.5)
-        conf = spline.estimate_confidence(np.array([1, 1]))
-        assert 0.0 <= conf <= 1.0
+        """Infinite fog scale is now rejected by the NaN/Inf safety guard."""
+        with pytest.raises(ValueError, match="fog_scale"):
+            BattenSpline(fog_scale=float('inf'))
 
     def test_negative_fog_scale_rejected(self):
         with pytest.raises(ValueError, match="fog_scale"):
