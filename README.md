@@ -206,6 +206,61 @@ The only requirements are:
 - You need multi-armed bandit optimality → use a proper bandit framework
 - Embeddings are not available → use rule-based or LLM-based routing
 
+## Acclimation fit — the batten through an agent's warming
+
+> *You don't make the shape. You let it out.* — the shipwright's line, and
+> the whole method: observed states are battens, and the fairing curve they
+> let out is the agent's character.
+
+Cross-pollinated from the elephant: a newcomer warms to a room — quickly
+or slowly depending on experience, talent, and training at modulating
+their vibe toward the room.  That modulation skill is the rate of an
+exponential relaxation.  `fit_acclimation` bends a batten spline through an
+agent's *observed states* in a room and reads the skill back:
+
+```mermaid
+flowchart LR
+    O[observed states<br/>agent over time] --> B[batten spline<br/>the fairing curve]
+    B --> R[rate = modulation skill]
+    B --> C[confidence]
+    B --> L[half-life<br/>time to close half the gap]
+    R --> N[predict_next<br/>where the agent will be]
+    R --> E[the room]
+    C --> E
+    L --> E
+```
+
+<p align="center">
+  <img src="assets/images/acclimation-fit.png" alt="A wooden batten bent through glowing points on a lofting floor — the acclimation curve let out through an agent's states" width="70%">
+</p>
+
+```python
+import numpy as np
+from batten_spline import fit_acclimation, predict_next, skill_from_curve
+
+room  = np.array([0.55, 0.6, 0.5, 0.45, 0.5, 0.5, 0.5])
+start = np.array([0.1, 0.2, 0.15, 0.3, 0.25, 0.2, 0.2])
+t = np.linspace(0.0, 10.0, 12)
+states = room + np.outer(np.exp(-0.35 * t), start - room)  # true rate 0.35
+
+res = fit_acclimation(t, states, room)
+res["rate"]        # 0.34 — the modulation skill
+res["confidence"]  # 0.98 — the shape is true
+res["half_life"]   # ~2.0 — time to close half the gap to the room
+res["elephant"]    # bridge to elephant.field.acclimation_rate_from
+
+predict_next(res["curve"], 2.0)      # where the agent will be
+skill_from_curve(res["curve"], room) # re-derive the skill
+```
+
+If the elephant lives at `/home/eileen/projects/elephant` (or
+`$ELEPHANT_ROOT`), the fit compares its rate against the analytic
+relaxation and reports the agreement; otherwise it is pure batten-spline.
+Scalar warmth series work the same way.  Full writeup:
+[`docs/acclimation-fit.md`](docs/acclimation-fit.md).
+
+---
+
 ## License
 
 MIT.  See [LICENSE](LICENSE).

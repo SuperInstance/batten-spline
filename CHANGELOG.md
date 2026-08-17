@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Acclimation fit** — the batten through an agent's warming (cross-pollinated from the elephant)
+  - `fit_acclimation(times, states, room_state)` — batten spline through observed states, exponential log-fit for the rate (the modulation skill), confidence from the spline's own fidelity × R², residual, half-life, and a best-effort bridge to `elephant.field.acclimation_rate_from`
+  - `AcclimationCurve` — the fairing curve: batten spline inside the observed span, fitted exponential outside; clamps between room and start
+  - `predict_next(curve, dt)` — where the agent will be, governed by the skill
+  - `skill_from_curve(curve, room)` — re-derive the rate, even against a different room reference
+  - Inverse-variance weighted log-fit (no OLS-on-log bias), elephant-consistent gap clamp (`[1e-9, 1]`), NaN/Inf safety raising clean `ValueError`s, confidence capped for two-point fits
+- Hero image + mermaid in README; full writeup in `docs/acclimation-fit.md`
+
 ## [0.1.0] — 2026-08-04
 
 ### Added
